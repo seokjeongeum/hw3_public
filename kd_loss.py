@@ -112,9 +112,11 @@ class PredictionLoss(nn.Module):
         # The F.softmax and F.log_softmax will be helpful here
         # Also keep in mind that the last dimension of the prediction is the feature dimension.
         teacher_pred.detach_()
-        target_terms = None
-        pred_terms = None
-        samplewise_sce = None
+        target_terms = teacher_pred / t
+        pred_terms = student_pred / t
+        samplewise_sce = -(
+            F.softmax(pred_terms, dim=-1) * F.log_softmax(target_terms, dim=-1)
+        ).sum(axis=1)
         mean_sce = samplewise_sce.mean()
         return mean_sce
         ####################################  END OF YOUR CODE  ##################################
