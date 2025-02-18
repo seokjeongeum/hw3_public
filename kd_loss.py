@@ -115,8 +115,8 @@ class PredictionLoss(nn.Module):
         target_terms = teacher_pred / t
         pred_terms = student_pred / t
         samplewise_sce = -(
-            F.softmax(pred_terms, dim=-1) * F.log_softmax(target_terms, dim=-1)
-        ).sum(axis=1)
+            F.softmax(target_terms, dim=-1) * F.log_softmax(pred_terms, dim=-1)
+        ).sum(dim=-1)
         mean_sce = samplewise_sce.mean()
         return mean_sce
         ####################################  END OF YOUR CODE  ##################################
@@ -175,16 +175,22 @@ class KnowledgeDistillationLoss(nn.Module):
         hidden_loss = 0
         for st_i, te_i in enumerate(self.layer_mapping):
             attn_fn = self.__getattr__(f"attention_loss{st_i}")
-            attention_loss += None
+            attention_loss += attn_fn(
+                teacher_out["attentions"][te_i], student_out["attentions"][st_i]
+            )
             hddn_fn = self.__getattr__(f"hidden_loss{st_i}")
-            hidden_loss += None
+            hidden_loss += hddn_fn(
+                teacher_out["hidden_states"][te_i], student_out["hidden_states"][st_i]
+            )
 
         # sum up the loss for each layer
-        loss = None
+        loss = embedding_loss + attention_loss + hidden_loss
 
         # apply the prediction penalty during task distillation
         if penalize_prediction:
-            prediction_loss = None
-            loss += None
+            prediction_loss = self.prediction_loss(
+                teacher_out["logits"], student_out["logits"]
+            )
+            loss += prediction_loss
         return loss
         ####################################  END OF YOUR CODE  ##################################
