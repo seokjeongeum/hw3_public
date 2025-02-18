@@ -83,8 +83,8 @@ class EmbeddingLayerLoss(nn.Module):
         # Then take their MSE loss.
         # To simplify calculations, remember that E[E[X|Y]] = E[X].
         teacher_embd.detach_()
-        proj_student = None
-        loss = None
+        proj_student = self.proj(student_embd)
+        loss = F.mse_loss(proj_student, teacher_embd)
         return loss
         ####################################  END OF YOUR CODE  ##################################
 
